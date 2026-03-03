@@ -1,0 +1,950 @@
+﻿<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+    <title>Pokémon MezaHub</title>
+
+    <!-- PWA Manifest & App Icons -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f9f506">
+    <link rel="apple-touch-icon"
+        href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f9f506",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#0a0a07",
+                        "surface-dark": "#16160e",
+                        "nav-bg": "#121212",
+                        "win": "#22c55e",
+                        "loss": "#ef4444",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        body { font-family: 'Spline Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass-card { background: linear-gradient(145deg, rgba(28, 28, 17, 0.8) 0%, rgba(22, 22, 14, 1) 100%); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
+        .pokemon-render { filter: drop-shadow(0 20px 13px rgb(0 0 0 / 0.15)) drop-shadow(0 8px 5px rgb(0 0 0 / 0.2)); transform: perspective(1000px) rotateY(-5deg); }
+        .nav-glow-active { text-shadow: 0 0 10px rgba(249, 245, 6, 0.8); filter: drop-shadow(0 0 5px rgba(249, 245, 6, 0.5)); }
+        .neon-glow { text-shadow: 0 0 8px rgba(249, 245, 6, 0.4); }
+        
+        /* Type colors for dynamic assignment */
+        .type-bg-fire { background-color: rgba(249, 115, 22, 0.1); border-color: rgba(249, 115, 22, 0.2); color: rgb(249, 115, 22); }
+        .type-bg-water { background-color: rgba(96, 165, 250, 0.1); border-color: rgba(96, 165, 250, 0.2); color: rgb(96, 165, 250); }
+        .type-bg-grass { background-color: rgba(74, 222, 128, 0.1); border-color: rgba(74, 222, 128, 0.2); color: rgb(74, 222, 128); }
+        .type-bg-electric { background-color: rgba(249, 245, 6, 0.1); border-color: rgba(249, 245, 6, 0.2); color: rgb(249, 245, 6); }
+        .type-bg-psychic { background-color: rgba(236, 72, 153, 0.1); border-color: rgba(236, 72, 153, 0.2); color: rgb(236, 72, 153); }
+        .type-bg-ghost { background-color: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.2); color: rgb(168, 85, 247); }
+        .type-bg-dragon { background-color: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.2); color: rgb(99, 102, 241); }
+        .type-bg-dark { background-color: rgba(71, 85, 105, 0.1); border-color: rgba(71, 85, 105, 0.2); color: rgb(148, 163, 184); }
+        .type-bg-steel { background-color: rgba(156, 163, 175, 0.1); border-color: rgba(156, 163, 175, 0.2); color: rgb(156, 163, 175); }
+        .type-bg-fighting { background-color: rgba(153, 27, 27, 0.1); border-color: rgba(153, 27, 27, 0.2); color: rgb(239, 68, 68); }
+        .type-bg-fairy { background-color: rgba(244, 114, 182, 0.1); border-color: rgba(244, 114, 182, 0.2); color: rgb(244, 114, 182); }
+        .type-bg-poison { background-color: rgba(126, 34, 206, 0.1); border-color: rgba(126, 34, 206, 0.2); color: rgb(168, 85, 247); }
+        .type-bg-normal { background-color: rgba(214, 211, 209, 0.1); border-color: rgba(214, 211, 209, 0.2); color: rgb(214, 211, 209); }
+        .type-bg-ground { background-color: rgba(180, 83, 9, 0.1); border-color: rgba(180, 83, 9, 0.2); color: rgb(217, 119, 6); }
+        .type-bg-rock { background-color: rgba(120, 113, 108, 0.1); border-color: rgba(120, 113, 108, 0.2); color: rgb(168, 162, 158); }
+        .type-bg-flying { background-color: rgba(125, 211, 252, 0.1); border-color: rgba(125, 211, 252, 0.2); color: rgb(125, 211, 252); }
+        .type-bg-ice { background-color: rgba(165, 243, 252, 0.1); border-color: rgba(165, 243, 252, 0.2); color: rgb(165, 243, 252); }
+        .type-bg-bug { background-color: rgba(163, 230, 53, 0.1); border-color: rgba(163, 230, 53, 0.2); color: rgb(163, 230, 53); }
+    </style>
+</head>
+
+<body class="bg-background-dark text-slate-100 font-display min-h-screen">
+    <div id="app-container" class="relative flex min-h-screen w-full flex-col max-w-[430px] mx-auto shadow-2xl pb-24">
+
+        <div id="screen-pokedex" class="view-screen w-full">
+
+            <div
+                class="flex items-center bg-background-dark/80 p-4 pb-2 justify-between sticky top-0 z-20 backdrop-blur-xl border-b border-white/5 gap-3">
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                    <div
+                        class="h-8 w-8 rounded-lg overflow-hidden border border-primary/20 shadow-[0_0_10px_rgba(249,245,6,0.2)] shrink-0">
+                        <img src="assets/logo.png" class="w-full h-full object-contain" alt="MezaHub">
+                    </div>
+                    <div class="flex flex-col items-start min-w-0">
+                        <span
+                            class="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">Pokémon</span>
+                        <span
+                            class="text-[10px] font-black text-primary uppercase tracking-[0.1em] leading-none mt-0.5 truncate w-full">MezaHub</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-3 shrink-0">
+                    <div class="flex items-center gap-1.5 border-r border-white/10 pr-3">
+                        <span class="material-symbols-outlined text-primary neon-glow text-lg">grid_view</span>
+                        <h2 class="text-white text-sm font-black leading-none uppercase tracking-wider">Pokédex</h2>
+                    </div>
+                    <button onclick="openSettings()"
+                        class="flex items-center justify-center rounded-full h-8 w-8 bg-surface-dark border border-white/10 text-slate-400 hover:text-white transition-colors shadow-lg shrink-0">
+                        <span class="material-symbols-outlined text-[16px]">settings</span>
+                    </button>
+                </div>
+            </div>
+            <div class="px-4 pt-4 pb-2">
+                <label class="flex flex-col w-full">
+                    <div
+                        class="flex w-full items-center rounded-2xl h-14 border border-white/10 bg-surface-dark/50 focus-within:border-primary/50 transition-all px-4 gap-3">
+                        <span class="material-symbols-outlined text-slate-500">search</span>
+                        <input id="pokedex-search-input"
+                            class="form-input flex-1 bg-transparent border-none focus:ring-0 text-base font-medium placeholder:text-slate-600"
+                            placeholder="Search Pokémon, moves, types..." value="" />
+                        <span class="material-symbols-outlined text-slate-500 text-xl">tune</span>
+                    </div>
+                </label>
+            </div>
+            <!-- Version filter row: margin bounds the scroll rail 16px from both edges always -->
+            <div style="margin: 0 16px; overflow-x: auto; overflow-y: hidden;" class="hide-scrollbar">
+                <div style="display: flex; flex-wrap: nowrap; gap: 10px; padding: 8px 0;">
+                    <button id="btn-version-All" onclick="setPokedexVersion('All')"
+                        class="flex h-9 shrink-0 items-center justify-center rounded-full bg-primary text-background-dark px-6 shadow-[0_0_20px_rgba(249,245,6,0.4)]">
+                        <p class="text-xs font-black uppercase tracking-wider">All</p>
+                    </button>
+                    <button id="btn-version-v1" onclick="setPokedexVersion('Stardust v1')"
+                        class="flex h-9 shrink-0 items-center justify-center rounded-full bg-surface-dark border border-white/10 px-5 text-slate-400 hover:text-white transition-colors">
+                        <p class="text-xs font-bold uppercase tracking-wider">Stardust v1</p>
+                    </button>
+                    <button id="btn-version-v2" onclick="setPokedexVersion('Stardust v2')"
+                        class="flex h-9 shrink-0 items-center justify-center rounded-full bg-surface-dark border border-white/10 px-5 text-slate-400 hover:text-white transition-colors">
+                        <p class="text-xs font-bold uppercase tracking-wider">Stardust v2</p>
+                    </button>
+                    <button id="btn-version-v3" onclick="setPokedexVersion('Stardust v3')"
+                        class="flex h-9 shrink-0 items-center justify-center rounded-full bg-surface-dark border border-white/10 px-5 text-slate-400 hover:text-white transition-colors">
+                        <p class="text-xs font-bold uppercase tracking-wider">Stardust v3</p>
+                    </button>
+                    <button id="btn-version-v4" onclick="setPokedexVersion('Stardust v4')"
+                        class="flex h-9 shrink-0 items-center justify-center rounded-full bg-surface-dark border border-white/10 px-5 text-slate-400 hover:text-white transition-colors">
+                        <p class="text-xs font-bold uppercase tracking-wider">Stardust v4</p>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 px-4 pt-6 pb-32 overflow-y-auto">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-white text-lg font-black leading-tight tracking-tight uppercase">National Dex
+                    </h3>
+                    <span id="dex-count-badge"
+                        class="text-[10px] font-bold text-slate-500 bg-white/5 px-2 py-1 rounded-md">898
+                        ENTRIES</span>
+                </div>
+                <div id="pokedex-grid" class="grid grid-cols-2 gap-4">
+                </div>
+                <div id="pokedex-pagination" class="flex justify-between items-center mt-6 hidden">
+                    <button onclick="prevPokedexPage()"
+                        class="px-4 py-2 bg-surface-dark border border-white/10 rounded-lg text-slate-300 hover:text-white transition-colors text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">Prev</button>
+                    <span id="pokedex-page-indicator"
+                        class="text-xs font-black text-slate-400 tracking-widest uppercase">Page 1 / 10</span>
+                    <button onclick="nextPokedexPage()"
+                        class="px-4 py-2 bg-surface-dark border border-white/10 rounded-lg text-slate-300 hover:text-white transition-colors text-xs font-bold shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-battle" class="view-screen hidden w-full">
+            <div
+                class="flex items-center bg-background-dark/80 p-4 pb-2 justify-between sticky top-0 z-20 backdrop-blur-xl border-b border-white/5 gap-3">
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                    <div
+                        class="h-8 w-8 rounded-lg overflow-hidden border border-primary/20 shadow-[0_0_10px_rgba(249,245,6,0.2)] shrink-0">
+                        <img src="assets/logo.png" class="w-full h-full object-contain" alt="MezaHub">
+                    </div>
+                    <div class="flex flex-col items-start min-w-0">
+                        <span
+                            class="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">Pokémon</span>
+                        <span
+                            class="text-[10px] font-black text-primary uppercase tracking-[0.1em] leading-none mt-0.5 truncate w-full">MezaHub</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-3 shrink-0">
+                    <div class="flex items-center gap-1.5 border-r border-white/10 pr-3">
+                        <span class="material-symbols-outlined text-primary neon-glow text-lg">swords</span>
+                        <h2 class="text-white text-sm font-black leading-none uppercase tracking-wider">Battle</h2>
+                    </div>
+                    <button onclick="openSettings()"
+                        class="flex items-center justify-center rounded-full h-8 w-8 bg-surface-dark border border-white/10 text-slate-400 hover:text-white transition-colors shadow-lg shrink-0">
+                        <span class="material-symbols-outlined text-[16px]">settings</span>
+                    </button>
+                </div>
+            </div>
+            <div class="px-4 py-4">
+                <label class="flex flex-col min-w-40 h-14 w-full">
+                    <div
+                        class="flex w-full flex-1 items-stretch rounded-xl h-full bg-surface-dark border border-white/10 focus-within:border-primary/50 transition-all">
+                        <div class="text-slate-500 flex items-center justify-center pl-4">
+                            <span class="material-symbols-outlined">search</span>
+                        </div>
+                        <input id="battle-search-input"
+                            class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-slate-100 focus:outline-0 focus:ring-0 border-none bg-transparent h-full placeholder:text-slate-600 px-4 pl-2 text-base font-medium"
+                            placeholder="Search opponent Pokemon..." value="Charizard" />
+                    </div>
+                </label>
+            </div>
+
+            <div id="battle-target-info" class="flex p-4">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Type Weaknesses + Support QR Counters side by side -->
+            <div class="px-4 pb-6 flex gap-3 items-stretch">
+
+                <!-- Left: Type Weaknesses -->
+                <div
+                    class="flex-[1.2] min-w-0 flex flex-col items-stretch glass-card bg-surface-dark border border-white/10 rounded-2xl p-4">
+                    <h3
+                        class="text-white text-sm font-bold leading-tight tracking-tight mb-3 flex items-center gap-1.5 shrink-0">
+                        <span class="material-symbols-outlined text-primary text-base">warning</span> Weaknesses
+                    </h3>
+                    <div id="battle-weaknesses-list" class="flex-1 flex flex-col w-full">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Right: Support QR Counters -->
+                <div
+                    class="flex-[1.8] min-w-0 flex flex-col items-stretch glass-card bg-surface-dark border border-white/10 rounded-2xl p-4">
+                    <h3
+                        class="text-white text-sm font-bold leading-tight tracking-tight mb-3 flex items-center gap-1.5 shrink-0">
+                        <span class="material-symbols-outlined text-primary text-base">qr_code_scanner</span> Support QR
+                    </h3>
+                    <div id="battle-support-counters" class="flex flex-col flex-1 h-full w-full gap-2">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="px-4 pb-12">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-white text-lg font-bold leading-tight tracking-tight flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">recommend</span> Top Counters
+                    </h3>
+                    <div class="flex bg-surface-dark border border-white/10 rounded-lg p-1">
+                        <button id="sort-pe-btn" onclick="setCounterSort('pe')"
+                            class="px-2 py-1 text-[9px] font-black uppercase tracking-wider rounded-md bg-primary text-black transition-colors">PE
+                            Eff ▼</button>
+                        <button id="sort-hunt-btn" onclick="setCounterSort('hunt')"
+                            class="px-2 py-1 text-[9px] font-black uppercase tracking-wider rounded-md text-slate-500 hover:text-white transition-colors">Hunt
+                            Pwr</button>
+                    </div>
+                </div>
+
+                <!-- Star Filter Option -->
+                <div class="flex gap-2 mb-4 overflow-x-auto hide-scrollbar pb-1">
+                    <button id="filter-star-All" onclick="setCounterStarFilter('All')"
+                        class="px-4 py-1.5 rounded-full text-[10px] font-black tracking-wider uppercase bg-primary text-black transition-colors shrink-0">All</button>
+                    <button id="filter-star-6" onclick="setCounterStarFilter('6-Star')"
+                        class="px-4 py-1.5 rounded-full text-[10px] font-black tracking-wider uppercase bg-surface-dark border border-white/10 text-slate-400 hover:text-white transition-colors shrink-0">6★</button>
+                    <button id="filter-star-5" onclick="setCounterStarFilter('5-Star')"
+                        class="px-4 py-1.5 rounded-full text-[10px] font-black tracking-wider uppercase bg-surface-dark border border-white/10 text-slate-400 hover:text-white transition-colors shrink-0">5★</button>
+                    <button id="filter-star-4" onclick="setCounterStarFilter('4-Star')"
+                        class="px-4 py-1.5 rounded-full text-[10px] font-black tracking-wider uppercase bg-surface-dark border border-white/10 text-slate-400 hover:text-white transition-colors shrink-0">4★</button>
+                    <button id="filter-star-3" onclick="setCounterStarFilter('3-Star')"
+                        class="px-4 py-1.5 rounded-full text-[10px] font-black tracking-wider uppercase bg-surface-dark border border-white/10 text-slate-400 hover:text-white transition-colors shrink-0">3★</button>
+                    <button id="filter-star-2" onclick="setCounterStarFilter('2-Star')"
+                        class="px-4 py-1.5 rounded-full text-[10px] font-black tracking-wider uppercase bg-surface-dark border border-white/10 text-slate-400 hover:text-white transition-colors shrink-0">2★</button>
+                </div>
+                <div id="battle-counters-list" class="grid grid-cols-1 gap-3">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-qr" class="view-screen hidden w-full">
+            <div
+                class="flex items-center bg-background-dark/80 p-4 pb-2 justify-between sticky top-0 z-20 backdrop-blur-xl border-b border-white/5 gap-3">
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                    <div
+                        class="h-8 w-8 rounded-lg overflow-hidden border border-primary/20 shadow-[0_0_10px_rgba(249,245,6,0.2)] shrink-0">
+                        <img src="assets/logo.png" class="w-full h-full object-contain" alt="MezaHub">
+                    </div>
+                    <div class="flex flex-col items-start min-w-0">
+                        <span
+                            class="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">Pokémon</span>
+                        <span
+                            class="text-[10px] font-black text-primary uppercase tracking-[0.1em] leading-none mt-0.5 truncate w-full">MezaHub</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-3 shrink-0">
+                    <div class="flex items-center gap-1.5 border-r border-white/10 pr-3">
+                        <span class="material-symbols-outlined text-primary neon-glow text-lg">qr_code_scanner</span>
+                        <h2 class="text-white text-sm font-black leading-none uppercase tracking-wider">Support QR</h2>
+                    </div>
+                    <button onclick="openSettings()"
+                        class="flex items-center justify-center rounded-full h-8 w-8 bg-surface-dark border border-white/10 text-slate-400 hover:text-white transition-colors shadow-lg shrink-0">
+                        <span class="material-symbols-outlined text-[16px]">settings</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="px-4 py-4">
+                <p
+                    class="text-slate-400 text-[10px] text-center uppercase font-bold tracking-widest border border-white/10 bg-white/5 p-3 rounded-xl shadow-inner">
+                    Present QR Code closely to the scanner.
+                </p>
+            </div>
+
+            <div id="qr-support-list" class="flex flex-col gap-4 px-4 pb-20">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <div id="screen-profile" class="view-screen hidden w-full pb-32">
+
+            <!-- Header -->
+            <div
+                class="flex items-center bg-background-dark/80 px-4 py-4 justify-between sticky top-0 z-20 backdrop-blur-xl border-b border-white/5 gap-3">
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                    <div
+                        class="h-8 w-8 rounded-lg overflow-hidden border border-primary/20 shadow-[0_0_10px_rgba(249,245,6,0.2)] shrink-0">
+                        <img src="assets/logo.png" class="w-full h-full object-contain" alt="MezaHub">
+                    </div>
+                    <div class="flex flex-col items-start min-w-0">
+                        <span
+                            class="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">Pokémon</span>
+                        <span
+                            class="text-[10px] font-black text-primary uppercase tracking-[0.1em] leading-none mt-0.5 truncate w-full">MezaHub</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-3 shrink-0">
+                    <div class="flex items-center gap-1.5 border-r border-white/10 pr-3">
+                        <span class="material-symbols-outlined text-primary neon-glow text-lg">person</span>
+                        <h2 class="text-white text-sm font-black leading-none uppercase tracking-wider">Profile</h2>
+                    </div>
+                    <button onclick="openSettings()"
+                        class="flex items-center justify-center rounded-full h-8 w-8 bg-surface-dark border border-white/10 text-slate-400 hover:text-white transition-colors shadow-lg shrink-0">
+                        <span class="material-symbols-outlined text-[16px]">settings</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ====== FACEBOOK-STYLE PROFILE COVER ====== -->
+            <div class="relative">
+
+                <!-- Cover Banner -->
+                <div id="profile-cover" class="w-full h-44 relative overflow-hidden cursor-pointer group"
+                    style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);"
+                    onclick="openAvatarPicker()">
+                    <div class="absolute inset-0 opacity-[0.07]"
+                        style="background-image: radial-gradient(circle, white 1.5px, transparent 1.5px); background-size: 20px 20px;">
+                    </div>
+                    <div class="absolute -top-10 -right-10 w-48 h-48 rounded-full pointer-events-none"
+                        style="background: rgba(249,245,6,0.18); filter: blur(40px);"></div>
+                    <div class="absolute -bottom-6 left-12 w-32 h-32 rounded-full pointer-events-none"
+                        style="background: rgba(59,130,246,0.15); filter: blur(30px);"></div>
+                    <img id="profile-cover-art" src="" alt=""
+                        class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+                        style="opacity:0; object-position: center top;">
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        style="background: rgba(0,0,0,0.4);">
+                        <div class="flex items-center gap-2 px-4 py-2 rounded-full"
+                            style="background: rgba(0,0,0,0.6);">
+                            <span class="material-symbols-outlined text-white text-sm">person</span>
+                            <span class="text-white text-xs font-bold uppercase tracking-wider">Choose Trainer</span>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-0 left-0 right-0 pointer-events-none"
+                        style="height:64px; background: linear-gradient(to top, #0d0d0f, transparent);"></div>
+                </div>
+
+                <!-- Floating avatar + button row -->
+                <div class="px-4 relative z-10 flex items-end justify-between" style="margin-top: -40px;">
+                    <div class="relative cursor-pointer" onclick="openAvatarPicker()">
+                        <div class="w-20 h-20 rounded-full overflow-hidden shadow-2xl flex items-center justify-center bg-surface-dark"
+                            style="border: 4px solid #0d0d0f;">
+                            <img id="profile-trainer-avatar-img"
+                                src="https://archives.bulbagarden.net/media/upload/thumb/4/4f/Spr_HGSS_Red.png/80px-Spr_HGSS_Red.png"
+                                alt="Trainer" class="w-full h-full object-cover"
+                                style="object-position: center top; transform: scale(1.1);"
+                                onerror="this.style.display='none'">
+                        </div>
+                        <div class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center shadow-lg"
+                            style="background:#f9f506; border: 2px solid #0d0d0f;">
+                            <span class="material-symbols-outlined text-black text-[13px]">edit</span>
+                        </div>
+                    </div>
+                    <button onclick="openAvatarPicker()"
+                        class="mb-1 flex items-center gap-1.5 text-slate-300 text-[11px] font-black uppercase tracking-wider transition-all hover:text-primary"
+                        style="padding: 6px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05);">
+                        <span class="material-symbols-outlined text-[13px]">person</span>Choose Trainer
+                    </button>
+                </div>
+
+                <!-- Name + title & QR -->
+                <div class="px-4 pt-3 pb-2 flex items-start justify-between">
+                    <div>
+                        <h3 id="profile-trainer-name"
+                            class="text-white font-black text-2xl leading-tight uppercase tracking-tight">
+                            Vincent</h3>
+                        <p
+                            class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-primary text-[12px]">verified</span>
+                            Legendary Trainer
+                        </p>
+                    </div>
+
+
+                </div>
+
+            </div>
+
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-3 gap-3 px-4 py-6">
+                <!-- Pokédex Card -->
+                <div
+                    class="glass-card bg-surface-dark border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 hover:border-primary/40 transition-all">
+                    <div
+                        class="size-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                        <span class="material-symbols-outlined text-primary text-2xl">grid_view</span>
+                    </div>
+                    <div>
+                        <span id="profile-dex-count" class="text-xl font-black text-white leading-none">0</span>
+                        <p class="text-[8px] uppercase font-black text-slate-500 tracking-wider mt-1 leading-tight">
+                            Pokédex<br>Caught</p>
+                    </div>
+                </div>
+                <!-- Battle Card -->
+                <div
+                    class="glass-card bg-surface-dark border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 hover:border-primary/40 transition-all">
+                    <div
+                        class="size-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                        <span class="material-symbols-outlined text-orange-400 text-2xl">swords</span>
+                    </div>
+                    <div>
+                        <span id="profile-battle-count" class="text-xl font-black text-white leading-none">0</span>
+                        <p class="text-[8px] uppercase font-black text-slate-500 tracking-wider mt-1 leading-tight">
+                            Battles<br>Recorded</p>
+                    </div>
+                </div>
+                <!-- Superstars Card -->
+                <div
+                    class="glass-card bg-surface-dark border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 hover:border-primary/40 transition-all">
+                    <div
+                        class="size-10 rounded-xl bg-yellow-500/10 flex items-center justify-center border border-yellow-500/30 shadow-[0_0_10px_rgba(234,179,8,0.3)]">
+                        <span class="material-symbols-outlined text-yellow-400 text-2xl">stars</span>
+                    </div>
+                    <div>
+                        <span id="profile-superstars-count" class="text-xl font-black text-white leading-none">0</span>
+                        <p class="text-[8px] uppercase font-black text-slate-500 tracking-wider mt-1 leading-tight">6★
+                            Tags<br>Found</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arcade Memory Tag (Massive QR) -->
+            <div class="px-4 pb-6">
+                <div
+                    class="w-full glass-card bg-surface-dark border border-white/10 rounded-3xl p-6 flex flex-col items-center justify-center relative shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
+                    <!-- Tech glow background -->
+                    <div
+                        class="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-[50px] pointer-events-none">
+                    </div>
+                    <div
+                        class="absolute -bottom-20 -right-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-[50px] pointer-events-none">
+                    </div>
+
+                    <div class="flex items-center gap-2 mb-4 relative z-10 w-full justify-center">
+                        <span class="material-symbols-outlined text-primary text-[24px]">qr_code_scanner</span>
+                        <h3 class="text-white font-black text-lg uppercase tracking-widest text-center shadow-lg">
+                            Trainer ID</h3>
+                    </div>
+
+                    <!-- Split View: QR on Left, Companion on Right -->
+                    <div class="flex items-center justify-between w-full h-[140px] gap-6 relative z-10">
+
+                        <!-- Shrunk QR Zone (1/3 Width Equivalent) -->
+                        <div class="w-32 h-32 bg-white rounded-2xl p-2 shadow-2xl shrink-0 relative group/qr cursor-pointer hover:scale-105 transition-transform duration-300"
+                            onclick="document.getElementById('qr-upload').click()">
+                            <div id="profile-trainer-qr"
+                                class="w-full h-full border-[3px] border-dashed border-slate-300 rounded-xl relative overflow-hidden flex flex-col items-center justify-center transition-colors group-hover/qr:border-primary">
+
+                                <!-- Image gets injected here via JS -->
+                                <img id="profile-trainer-qr-img"
+                                    class="absolute inset-0 w-full h-full object-contain hidden z-10 bg-white" src=""
+                                    alt="Mezastar QR">
+
+                                <!-- Placeholder structure -->
+                                <span id="profile-trainer-qr-icon"
+                                    class="material-symbols-outlined text-slate-300 text-[40px] mb-1">qr_code_2</span>
+                                <span id="profile-trainer-qr-text"
+                                    class="text-slate-400 font-bold text-[8px] uppercase tracking-widest text-center px-2 leading-tight">Tap
+                                    to<br>upload</span>
+
+                                <!-- Upload Hover Overlay -->
+                                <div id="profile-trainer-qr-overlay"
+                                    class="absolute inset-0 bg-black/80 z-20 flex flex-col items-center justify-center opacity-0 group-hover/qr:opacity-100 transition-opacity">
+                                    <span
+                                        class="material-symbols-outlined text-white text-[32px] mb-1">cloud_upload</span>
+                                    <span
+                                        class="text-primary font-black text-[9px] uppercase tracking-widest">Update</span>
+                                </div>
+                            </div>
+                            <input type="file" id="qr-upload" class="hidden" accept="image/*"
+                                onchange="handleImageUpload(event, 'qr')">
+                        </div>
+
+                        <!-- Full Body Borderless Companion Pokémon -->
+                        <div class="flex-1 h-full flex flex-col items-center justify-center relative cursor-pointer group/comp hover:scale-105 transition-transform duration-300 rounded-xl"
+                            onclick="openCompanionPicker()">
+                            <!-- Glow highlight behind the Pokemon -->
+                            <div
+                                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-yellow-500/20 rounded-full blur-[30px] z-0 pointer-events-none">
+                            </div>
+
+                            <img id="profile-companion-img"
+                                src="https://play.pokemonshowdown.com/sprites/ani/pikachu.gif"
+                                class="w-full h-full object-contain relative z-10 opacity-90 drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]"
+                                alt="Companion">
+
+                            <!-- Hover Overlay -->
+                            <div
+                                class="absolute inset-0 bg-black/50 z-20 flex flex-col items-center justify-center opacity-0 group-hover/comp:opacity-100 transition-opacity rounded-xl">
+                                <span class="material-symbols-outlined text-white text-[32px] mb-1">swap_horiz</span>
+                                <span class="text-primary font-black text-[9px] uppercase tracking-widest">Change</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <p
+                        class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] text-center mt-6 relative z-10">
+                        Scan this code at the Arcade Machine</p>
+                </div>
+            </div>
+
+            <!-- Top Pokémon -->
+            <div class="px-4 pb-8">
+                <div class="flex items-center justify-between mb-4 px-1">
+                    <h3 class="text-white text-base font-black tracking-tight uppercase flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-xl">star</span> Top Pokémon
+                    </h3>
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Recent 10</span>
+                </div>
+                <div id="profile-top-pokemon" class="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- Battle History -->
+            <div class="px-4 pb-12">
+                <div class="flex items-center justify-between mb-4 px-1">
+                    <h3 class="text-white text-base font-black tracking-tight uppercase flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-xl">history</span> Battle History
+                    </h3>
+                    <button class="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">View
+                        All</button>
+                </div>
+                <div id="profile-battle-history" class="flex flex-col gap-3">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Trainer Avatar Picker Modal -->
+    <div id="avatar-picker-modal" class="fixed inset-0 z-[200] hidden flex items-end justify-center"
+        style="background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);">
+        <div
+            class="w-full max-w-[430px] bg-surface-dark rounded-t-3xl border-t border-white/10 shadow-2xl pb-8 max-h-[85vh] overflow-y-auto hide-scrollbar">
+            <div
+                class="sticky top-0 bg-surface-dark px-4 pt-4 pb-3 flex items-center justify-between border-b border-white/5">
+                <h3 class="text-white font-black text-base uppercase tracking-widest">Choose Your Trainer</h3>
+                <button onclick="document.getElementById('avatar-picker-modal').classList.add('hidden')"
+                    class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
+            <div class="grid grid-cols-4 gap-3 p-4" id="avatar-trainer-grid">
+                <!-- Injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Companion Picker Modal -->
+    <div id="companion-picker-modal" class="fixed inset-0 z-[200] hidden flex items-end justify-center"
+        style="background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);">
+        <div
+            class="w-full max-w-[430px] bg-surface-dark rounded-t-3xl border-t border-white/10 shadow-2xl pb-8 max-h-[85vh] flex flex-col">
+            <div
+                class="shrink-0 bg-surface-dark px-4 pt-4 pb-3 flex items-center justify-between border-b border-white/5">
+                <h3 class="text-white font-black text-base uppercase tracking-widest flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">pets</span> Companion
+                </h3>
+                <button onclick="document.getElementById('companion-picker-modal').classList.add('hidden')"
+                    class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto hide-scrollbar p-4">
+                <div class="grid grid-cols-3 gap-3" id="companion-pokemon-grid">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav
+        class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] border-t border-white/5 bg-nav-bg px-6 pb-6 pt-3 z-50">
+
+        <div class="flex justify-between items-center">
+            <a onclick="navigate('pokedex')" class="flex flex-col items-center gap-1 group cursor-pointer w-[60px]">
+                <span id="nav-icon-pokedex"
+                    class="material-symbols-outlined text-primary neon-glow text-[24px]">grid_view</span>
+                <span id="nav-text-pokedex"
+                    class="text-[8px] font-bold text-primary uppercase tracking-wider neon-glow">Pokedex</span>
+            </a>
+            <a onclick="navigate('battle')" class="flex flex-col items-center gap-1 group cursor-pointer w-[60px]">
+                <span id="nav-icon-battle"
+                    class="material-symbols-outlined text-slate-500 group-hover:text-white transition-colors text-[24px]">swords</span>
+                <span id="nav-text-battle"
+                    class="text-[8px] font-bold text-slate-500 uppercase tracking-wider transition-colors">Battle</span>
+            </a>
+            <a onclick="navigate('qr')" class="flex flex-col items-center gap-1 group cursor-pointer w-[60px]">
+                <span id="nav-icon-qr"
+                    class="material-symbols-outlined text-slate-500 group-hover:text-white transition-colors text-[24px]">qr_code_scanner</span>
+                <span id="nav-text-qr"
+                    class="text-[8px] font-bold text-slate-500 uppercase tracking-wider transition-colors">QR
+                    Sup</span>
+            </a>
+            <a onclick="navigate('profile')" class="flex flex-col items-center gap-1 group cursor-pointer w-[60px]">
+                <span id="nav-icon-profile"
+                    class="material-symbols-outlined text-slate-500 group-hover:text-white transition-colors text-[24px]">person</span>
+                <span id="nav-text-profile"
+                    class="text-[8px] font-bold text-slate-500 uppercase tracking-wider transition-colors">Profile</span>
+            </a>
+        </div>
+    </nav>
+    </div>
+
+    <!-- Pokemon Detail Modal -->
+    <div id="pokemon-modal"
+        class="fixed inset-x-0 bottom-0 top-0 z-[100] hidden bg-background-dark overflow-y-auto max-w-[430px] mx-auto shadow-2xl transition-all pb-8 hide-scrollbar">
+    </div>
+
+    <!-- QR Support Modal -->
+    <div id="qr-modal"
+        class="fixed inset-x-0 bottom-0 top-0 z-[110] hidden bg-background-dark/95 backdrop-blur-xl overflow-y-auto max-w-[430px] mx-auto shadow-2xl transition-all pb-8 hide-scrollbar">
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal"
+        class="fixed inset-x-0 bottom-0 top-0 z-[110] hidden bg-background-dark/95 backdrop-blur-xl max-w-[430px] mx-auto shadow-2xl transition-all">
+        <div class="flex flex-col h-full w-full relative">
+
+            <!-- Header -->
+            <div
+                class="sticky top-0 bg-background-dark/80 backdrop-blur-md p-4 border-b border-white/5 flex items-center justify-between z-10 w-full">
+                <h2 class="text-white text-base font-black uppercase tracking-widest flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-xl">settings</span> App Settings
+                </h2>
+                <button onclick="document.getElementById('settings-modal').classList.add('hidden')"
+                    class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-red-500/20 transition-all shadow-md">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+
+            <div class="px-4 pb-12 pt-4 flex-1 overflow-y-auto hide-scrollbar">
+                <div class="flex flex-col gap-6">
+
+                    <!-- SECTION: App Info -->
+                    <div>
+                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">App Info</p>
+                        <div class="flex flex-col gap-2">
+
+                            <!-- Version Info -->
+                            <div class="glass-card bg-surface-dark border border-white/10 rounded-xl overflow-hidden">
+                                <button
+                                    onclick="document.getElementById('version-info-panel').classList.toggle('hidden')"
+                                    class="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-all group">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                                            <span class="material-symbols-outlined text-blue-400 text-lg">info</span>
+                                        </div>
+                                        <span class="text-sm font-bold text-white">Version Info</span>
+                                    </div>
+                                    <span
+                                        class="material-symbols-outlined text-slate-500 text-sm transition-transform group-aria-expanded:rotate-180">expand_more</span>
+                                </button>
+                                <div id="version-info-panel"
+                                    class="hidden border-t border-white/5 px-4 py-3 bg-black/20">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="text-[9px] font-black text-slate-500 uppercase tracking-widest">App
+                                                Version</span>
+                                            <span class="text-sm font-bold text-white mt-0.5">v3.0.0</span>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Data
+                                                Version</span>
+                                            <span class="text-sm font-bold text-primary mt-0.5">Stardust v4</span>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Pokémon
+                                                Entries</span>
+                                            <span class="text-sm font-bold text-white mt-0.5"
+                                                id="settings-dex-count">—</span>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Platform</span>
+                                            <span class="text-sm font-bold text-white mt-0.5">PWA</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Credits -->
+                            <div class="glass-card bg-surface-dark border border-white/10 rounded-xl overflow-hidden">
+                                <button onclick="document.getElementById('credits-panel').classList.toggle('hidden')"
+                                    class="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-all group">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-9 h-9 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
+                                            <span
+                                                class="material-symbols-outlined text-yellow-400 text-lg">emoji_events</span>
+                                        </div>
+                                        <span class="text-sm font-bold text-white">Credits</span>
+                                    </div>
+                                    <span class="material-symbols-outlined text-slate-500 text-sm">expand_more</span>
+                                </button>
+                                <div id="credits-panel" class="hidden border-t border-white/5 px-4 py-3 bg-black/20">
+                                    <div class="flex flex-col gap-3">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                                                <span class="material-symbols-outlined text-primary">person</span>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-black text-white">Huwan Bisente</p>
+                                                <p class="text-[10px] text-slate-400 font-bold">App Developer &amp;
+                                                    Designer</p>
+                                            </div>
+                                        </div>
+                                        <div class="border-t border-white/5 pt-3 flex flex-col gap-1.5">
+                                            <p
+                                                class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                                                Data Sources</p>
+                                            <p class="text-[11px] text-slate-300 font-bold flex items-center gap-1.5">
+                                                <span
+                                                    class="material-symbols-outlined text-[13px] text-primary">database</span>
+                                                PokéAPI — Sprites &amp; Type Data
+                                            </p>
+                                            <p class="text-[11px] text-slate-300 font-bold flex items-center gap-1.5">
+                                                <span
+                                                    class="material-symbols-outlined text-[13px] text-primary">sports_esports</span>
+                                                Pokémon Showdown — Battle Sprites
+                                            </p>
+                                            <p class="text-[11px] text-slate-300 font-bold flex items-center gap-1.5">
+                                                <span
+                                                    class="material-symbols-outlined text-[13px] text-primary">table_chart</span>
+                                                MezaHub Excel Tables — Game Data
+                                            </p>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 font-medium text-center pt-1">Pokémon and
+                                            all related names are trademarks of Nintendo / Game Freak.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- SECTION: Feedback -->
+                    <div>
+                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Feedback</p>
+                        <div class="flex flex-col gap-2">
+
+                            <!-- Comments / Suggestions -->
+                            <div class="glass-card bg-surface-dark border border-white/10 rounded-xl overflow-hidden">
+                                <button
+                                    onclick="document.getElementById('suggestions-panel').classList.toggle('hidden')"
+                                    class="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-all">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                                            <span
+                                                class="material-symbols-outlined text-purple-400 text-lg">chat_bubble</span>
+                                        </div>
+                                        <span class="text-sm font-bold text-white">Comments &amp; Suggestions</span>
+                                    </div>
+                                    <span class="material-symbols-outlined text-slate-500 text-sm">expand_more</span>
+                                </button>
+                                <div id="suggestions-panel"
+                                    class="hidden border-t border-white/5 px-4 py-3 bg-black/20">
+                                    <div class="flex flex-col gap-3">
+                                        <textarea id="suggestions-input"
+                                            class="w-full bg-background-dark border border-white/10 rounded-lg p-3 text-sm text-white placeholder:text-slate-600 resize-none focus:border-primary/50 focus:outline-none transition-colors"
+                                            rows="4"
+                                            placeholder="Share your thoughts, ideas, or report a bug..."></textarea>
+                                        <div class="flex gap-2">
+                                            <button onclick="saveSuggestion()"
+                                                class="flex-1 bg-primary text-black text-[11px] font-black uppercase tracking-wider py-2.5 rounded-lg hover:bg-primary/80 transition-colors flex items-center justify-center gap-1.5">
+                                                <span class="material-symbols-outlined text-[14px]">send</span> Submit
+                                            </button>
+                                            <button onclick="document.getElementById('suggestions-input').value = ''"
+                                                class="px-3 bg-white/5 border border-white/10 text-slate-400 text-[11px] font-black uppercase tracking-wider py-2.5 rounded-lg hover:bg-white/10 transition-colors">
+                                                Clear
+                                            </button>
+                                        </div>
+                                        <div id="suggestions-saved-list" class="flex flex-col gap-2 mt-1"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Contact Me -->
+                            <a href="mailto:jvchioco3@gmail.com?subject=MezaHub%20Feedback"
+                                class="glass-card bg-surface-dark border border-white/10 rounded-xl p-4 flex items-center justify-between hover:border-primary/40 transition-all group block">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-green-400 text-lg">mail</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-white block">Contact Me</span>
+                                        <span class="text-[10px] text-slate-400 font-bold">jvchioco3@gmail.com</span>
+                                    </div>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined text-slate-500 text-sm group-hover:text-primary transition-colors">open_in_new</span>
+                            </a>
+
+                        </div>
+                    </div>
+
+                    <!-- SECTION: Data -->
+                    <div>
+                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Data</p>
+                        <div class="flex flex-col gap-2">
+
+                            <!-- Clear Collection -->
+                            <div class="glass-card bg-surface-dark border border-white/10 rounded-xl overflow-hidden">
+                                <button
+                                    onclick="document.getElementById('clear-confirm-panel').classList.toggle('hidden')"
+                                    class="w-full p-4 flex items-center justify-between hover:bg-red-500/5 transition-all group">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-9 h-9 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
+                                            <span
+                                                class="material-symbols-outlined text-red-400 text-lg">delete_forever</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-sm font-bold text-white block">Clear Collection</span>
+                                            <span class="text-[10px] text-slate-400 font-bold"
+                                                id="settings-collected-count">Loading...</span>
+                                        </div>
+                                    </div>
+                                    <span class="material-symbols-outlined text-slate-500 text-sm">expand_more</span>
+                                </button>
+                                <div id="clear-confirm-panel"
+                                    class="hidden border-t border-red-500/20 px-4 py-3 bg-red-500/5">
+                                    <p class="text-[11px] text-slate-300 font-bold mb-3 flex items-start gap-2">
+                                        <span
+                                            class="material-symbols-outlined text-red-400 text-[14px] mt-0.5 shrink-0">warning</span>
+                                        This will permanently delete all your collected Pokémon. This action cannot be
+                                        undone.
+                                    </p>
+                                    <div class="flex gap-2">
+                                        <button onclick="clearAllCollection()"
+                                            class="flex-1 bg-red-500 text-white text-[11px] font-black uppercase tracking-wider py-2.5 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-1.5">
+                                            <span class="material-symbols-outlined text-[14px]">delete_forever</span>
+                                            Yes, Clear All
+                                        </button>
+                                        <button
+                                            onclick="document.getElementById('clear-confirm-panel').classList.add('hidden')"
+                                            class="px-4 bg-white/5 border border-white/10 text-slate-300 text-[11px] font-black uppercase tracking-wider py-2.5 rounded-lg hover:bg-white/10 transition-colors">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- SECTION: Support -->
+                    <div>
+                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Support the
+                            App</p>
+                        <!-- Buy Me a Coffee -->
+                        <a href="https://buymeacoffee.com/huwanbisente" target="_blank"
+                            class="w-full relative overflow-hidden rounded-xl p-[1.5px] group cursor-pointer block">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-r from-primary via-[#ffb900] to-primary z-0 opacity-80 group-hover:opacity-100 transition-opacity animate-pulse">
+                            </div>
+                            <div
+                                class="relative z-10 bg-surface-dark w-full h-full rounded-[10px] p-4 flex items-center justify-between hover:bg-surface-dark/80 transition-all">
+                                <div class="flex items-center gap-3">
+                                    <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg"
+                                        alt="Buy me a coffee" class="w-8 h-8" />
+                                    <div class="flex flex-col items-start">
+                                        <span class="text-sm font-black text-white">Buy Me a Coffee</span>
+                                        <span
+                                            class="text-[9px] font-bold text-primary uppercase tracking-widest mt-0.5">buymeacoffee.com/huwanbisente</span>
+                                    </div>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined text-primary text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- App version footer -->
+                    <p class="text-[9px] text-slate-600 font-bold text-center tracking-widest pt-2 pb-4">POKÉMON MEZAHUB
+                        · v3.0.0 · Made with ♥</p>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-storage-compat.js"></script>
+
+    <script src="js/data.js"></script>
+    <script src="js/firebase-db.js"></script>
+    <script src="js/app.js"></script>
+
+    <!-- Register Service Worker for PWA Installation -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('ServiceWorker registered'))
+                    .catch(err => console.log('ServiceWorker registration failed: ', err));
+            });
+        }
+    </script>
+</body>
+
+</html>
