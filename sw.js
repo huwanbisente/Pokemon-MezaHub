@@ -1,10 +1,10 @@
-const CACHE_NAME = 'stardust-hub-v21';
+const CACHE_NAME = 'stardust-hub-v45';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
-    './app.js',
-    './data.js',
-    './firebase-db.js'
+    './js/app.js',
+    './js/data.js',
+    './js/firebase-db.js'
 ];
 
 self.addEventListener('install', event => {

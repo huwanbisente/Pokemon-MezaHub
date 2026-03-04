@@ -1,0 +1,28 @@
+# VS Code
+.vscode/
+
+# Python Virtual Environments
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Node Modules (if ever used)
+node_modules/
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+
+# Firebase Deployment Caches
+.firebase/
+firebase-debug.log
+
+# Temporary and Archival Files
+*.patch
+*.diff
+*.bak
+*.tmp
+*.log
+_Archive/

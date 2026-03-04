@@ -1,9 +1,10 @@
 import pandas as pd
 import json
+import os
 
-file_path = 'Updated_PokeTables.xlsx'
+script_dir = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(script_dir, '../data/Updated_PokeTables.xlsx')
 xl = pd.ExcelFile(file_path)
-
 main_df = xl.parse('Main_Table')
 weakness_df = xl.parse('WeaknessChart')
 moves_df = xl.parse('Move_List')
@@ -99,8 +100,8 @@ for _, row in merged.iterrows():
         return obj
 
     records.append(clean_nan(record))
-
-with open('data.js', 'w', encoding='utf-8') as f:
+output_path = os.path.join(script_dir, '../js/data.js')
+with open(output_path, 'w', encoding='utf-8') as f:
     f.write('const DB_POKEMON_LIST = ')
     json.dump(records, f, indent=2)
     f.write(';')

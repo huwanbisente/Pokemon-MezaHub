@@ -155,11 +155,12 @@ function renderProfile() {
         }
     }
 
-    // Battle History
+    // Battle History (Show Top 3 on Profile)
     const historyEl = document.getElementById('profile-battle-history');
     if (historyEl) {
         if (log.length > 0) {
-            historyEl.innerHTML = log.map(entry => {
+            const displayLog = log.slice(0, 3);
+            historyEl.innerHTML = displayLog.map(entry => {
                 const date = new Date(entry.id).toLocaleDateString();
                 const typesHtml = entry.opponent.types.map(t => `<span class="px-1 py-0.5 rounded-[4px] text-[7px] font-black uppercase ${TYPE_COLORS[t] || 'bg-slate-400'}">${t}</span>`).join('');
                 const countersHtml = entry.countersUsed.slice(0, 2).map(c => `<span class="bg-white/5 px-1.5 py-0.5 rounded text-[8px] text-slate-300 font-bold border border-white/5">${c}</span>`).join('');
@@ -184,6 +185,78 @@ function renderProfile() {
         }
     }
 }
+
+// --- Modals for Profile ---
+
+window.openCollectionModal = function () {
+    const col = getCollection();
+    const modal = document.getElementById('collection-modal');
+    const grid = document.getElementById('collection-modal-grid');
+    const stats = document.getElementById('collection-modal-stats');
+
+    if (!modal || !grid || !stats) return;
+
+    stats.innerText = `${col.size} Collected`;
+
+    const collectedIds = Array.from(col);
+    const collectedPokemon = PokemonData.list.filter(p => collectedIds.includes(p.id));
+
+    if (collectedPokemon.length === 0) {
+        grid.innerHTML = '<p class="text-slate-500 text-xs col-span-4 text-center py-10 w-full">No Pokémon collected yet.</p>';
+    } else {
+        grid.innerHTML = collectedPokemon.map(p => {
+            const urlName = getPokemonImageUrlName(p.name);
+            const imgUrl = `https://play.pokemonshowdown.com/sprites/gen5/${urlName}.png`;
+            return `
+            <div class="glass-card bg-white/5 border border-white/10 rounded-xl p-2 flex flex-col items-center gap-1 cursor-pointer hover:bg-white/10 transition-all"
+                 onclick="showPokemonModal('${p.name.replace(/'/g, "\\'")}')">
+                <img src="${imgUrl}" class="w-12 h-12 object-contain pixelated" alt="${p.name}"/>
+                <p class="text-[8px] text-white font-black truncate w-full text-center uppercase">${p.name}</p>
+            </div>
+            `;
+        }).join('');
+    }
+
+    modal.classList.remove('hidden');
+};
+
+window.openBattleHistoryModal = function () {
+    const log = getBattleLog();
+    const modal = document.getElementById('battle-history-modal');
+    const wrapper = document.getElementById('history-modal-wrapper');
+    const stats = document.getElementById('history-modal-stats');
+
+    if (!modal || !wrapper || !stats) return;
+
+    stats.innerText = `${log.length} Battles Recorded`;
+
+    if (log.length === 0) {
+        wrapper.innerHTML = '<p class="text-slate-500 text-xs text-center py-10 w-full">No battle records found.</p>';
+    } else {
+        wrapper.innerHTML = log.map(entry => {
+            const date = new Date(entry.id).toLocaleDateString();
+            const typesHtml = entry.opponent.types.map(t => `<span class="px-1 py-0.5 rounded-[4px] text-[7px] font-black uppercase ${TYPE_COLORS[t] || 'bg-slate-400'}">${t}</span>`).join('');
+            const countersHtml = entry.countersUsed.map(c => `<span class="bg-white/5 px-1.5 py-0.5 rounded text-[8px] text-slate-300 font-bold border border-white/5">${c}</span>`).join('');
+
+            return `
+            <div class="bg-surface-dark border border-white/10 rounded-xl p-3 flex flex-col gap-2">
+                <div class="flex justify-between items-start">
+                    <div class="flex flex-col">
+                        <p class="text-white text-xs font-black uppercase tracking-tight">${entry.opponent.name}</p>
+                        <div class="flex gap-1 mt-1">${typesHtml}</div>
+                    </div>
+                    <span class="text-[8px] font-bold text-slate-500 uppercase">${date}</span>
+                </div>
+                <div class="flex items-center gap-2 pt-2 border-t border-white/5">
+                    <span class="text-[8px] font-black text-primary uppercase tracking-widest">Counters Used:</span>
+                    <div class="flex gap-1 flex-wrap">${countersHtml}</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    modal.classList.remove('hidden');
+};
 
 function getPokemonImageUrlName(name) {
     // Handle Pikachu special variants like "Pikachu(5☆)" → just "pikachu"
@@ -354,6 +427,7 @@ const PokemonData = {
             const urlName = getPokemonImageUrlName(pokemon.name);
             const imgUrl = `https://play.pokemonshowdown.com/sprites/gen5/${urlName}.png`;
             const imgUrlAni = `https://play.pokemonshowdown.com/sprites/ani/${urlName}.gif`;
+            const gimmickBadge = getGimmickBadge(pokemon);
 
             html += `
             <div onclick="showPokemonModal('${pokemon.name.replace(/'/g, "\\'")}')" class="glass-card rounded-2xl p-4 border border-white/10 relative group overflow-hidden cursor-pointer flex flex-col justify-between hover:border-primary/50 transition-colors">
@@ -369,8 +443,13 @@ const PokemonData = {
                              onerror="this.src='${imgUrl}'; this.onerror=null;"/>
                     </div>
                     <div class="flex justify-between items-center mb-1 gap-2">
-                        <h4 class="text-white font-black text-sm tracking-tight leading-tight line-clamp-1">${pokemon.name}</h4>
-                        <span class="text-primary text-[10px] bg-primary/10 px-1 py-0.5 rounded leading-none shrink-0 font-black">${pokemon.star ? pokemon.star.replace(/[- ]star/i, '★') : ''}</span>
+                        <div class="flex items-center gap-1.5 overflow-hidden">
+                            <h4 class="text-white font-black text-sm tracking-tight leading-tight line-clamp-1">${pokemon.name}</h4>
+                            <span class="text-primary text-[10px] bg-primary/10 px-1 py-0.5 rounded leading-none shrink-0 font-black">${pokemon.star ? pokemon.star.replace(/[- ]star/i, '★') : ''}</span>
+                        </div>
+                        <div class="shrink-0 flex items-center">
+                            ${gimmickBadge}
+                        </div>
                     </div>
                     <div class="flex flex-wrap gap-1 mb-2">
                         ${typesHtml}
@@ -461,7 +540,7 @@ const TYPE_COLORS = {
 };
 
 function navigate(viewId) {
-    const screens = ['pokedex', 'battle', 'qr', 'profile'];
+    const screens = ['pokedex', 'battle', 'qr', 'profile', 'marketplace'];
     screens.forEach(screen => {
         const el = document.getElementById(`screen-${screen}`);
         const icon = document.getElementById(`nav-icon-${screen}`);
@@ -489,6 +568,8 @@ function navigate(viewId) {
         }
     } else if (viewId === 'profile') {
         renderProfile();
+    } else if (viewId === 'marketplace') {
+        renderMarketplace();
     }
 }
 
@@ -542,10 +623,10 @@ function renderSupportCounters(opponent) {
              class="cursor-pointer hover:bg-white/5 rounded-xl transition-all group w-full overflow-hidden flex flex-col h-full">
 
             <!-- TOP ROW: Avatar (left) + QR (right) -->
-            <div class="flex gap-2 p-2 pb-1 flex-1">
+            <div class="flex gap-2 p-2 pb-1 flex-1 items-center">
 
                 <!-- Left box: Pokémon avatar -->
-                <div class="flex-1 flex items-center justify-center relative min-h-[90px]">
+                <div class="flex-1 flex items-center justify-center relative h-[80px]">
                     <img class="w-full h-full object-contain pixelated p-1"
                          src="${imgUrlAni}"
                          onerror="this.src='${imgUrlStatic}'; this.onerror=null;"
@@ -554,9 +635,9 @@ function renderSupportCounters(opponent) {
                     <span class="absolute bottom-1 right-1 text-[6px] font-black text-white ${multBadgeColor} px-1 py-0.5 rounded leading-none z-10 shadow-sm">${mult}x</span>
                 </div>
 
-                <!-- Right box: QR code -->
-                <div class="flex-1 bg-white border border-black/10 rounded-lg flex items-center justify-center overflow-hidden p-1.5 min-h-[90px]">
-                    <img src="${sup.qrImage}" class="w-full h-full object-contain" alt="QR Code"/>
+                <!-- Right box: QR code tightly wrapped -->
+                <div class="flex-1 flex items-center justify-center">
+                    <img src="${sup.qrImage}" class="bg-white border border-black/10 rounded-lg p-1.5 w-[75px] h-[75px] object-contain shadow-sm" alt="QR Code"/>
                 </div>
 
             </div>
@@ -646,8 +727,36 @@ function applyCounterSort() {
     renderCounters(filtered.slice(0, 5));
 }
 
+function getGimmickBadge(pokemon) {
+    // 1. Check Explicit list for Mega Evolutions first (these often have "nan" for gimmick move)
+    const megaList = ['Venusaur', 'Charizard', 'Blastoise', 'Pidgeot', 'Gengar'];
+    if (megaList.includes(pokemon.name) || pokemon.name.includes('Mega ') || (pokemon.name === 'Lucario' && pokemon.star === '5-star')) {
+        return `<img src="assets/icons/Mega_Evolution.png" class="h-6 w-6 object-contain drop-shadow-md" alt="Mega Evolution" title="Mega Evolution">`;
+    }
+
+    // 2. Bail out if no gimmick move exists
+    if (!pokemon.moves || !pokemon.moves.gimmick || String(pokemon.moves.gimmick).toLowerCase() === 'nan') return '';
+
+    const gimmick = String(pokemon.moves.gimmick).toLowerCase();
+
+    // 3. Dynamax check
+    if (gimmick.includes('max ') || gimmick.includes('g-max')) {
+        return `<img src="assets/icons/Dynamax.png" class="h-6 w-6 object-contain drop-shadow-md" alt="Dynamax" title="Dynamax: ${pokemon.moves.gimmick}">`;
+    }
+
+    // 4. Z-Move checks
+    if (gimmick.includes('z-') || gimmick.includes('downpour') || gimmick.includes('strike') || gimmick.includes('rave') || gimmick.includes('symphony') || gimmick.includes('impact') || pokemon.version.includes('V1')) {
+        // Broad catch for Z-moves which have varied names
+        return `<img src="assets/icons/Z-Move.png" class="h-6 w-6 object-contain drop-shadow-md" alt="Z-Move" title="Z-Move: ${pokemon.moves.gimmick}">`;
+    }
+
+    // Default fallback to Z-Move if it's V1/V2 and has a gimmick we didn't text-match
+    return `<img src="assets/icons/Z-Move.png" class="h-6 w-6 object-contain drop-shadow-md" alt="Gimmick" title="${pokemon.moves.gimmick}">`;
+}
+
 function renderOpponent(pokemon) {
     const typesHtml = pokemon.types.map(t => `<span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${TYPE_COLORS[t] || 'bg-slate-400'}">${t}</span>`).join('');
+    const gimmickBadge = getGimmickBadge(pokemon);
 
     const urlName = getPokemonImageUrlName(pokemon.name);
     const imgUrlStatic = `https://play.pokemonshowdown.com/sprites/gen5/${urlName}.png`;
@@ -663,12 +772,13 @@ function renderOpponent(pokemon) {
                             <span class="text-primary text-sm font-black bg-primary/10 px-1.5 py-0.5 rounded leading-none shrink-0">${pokemon.star ? pokemon.star.replace(/[- ]star/i, '★') : ''}</span>
                         </p>
                         ${typesHtml}
+                        ${gimmickBadge}
                     </div>
                     <p class="text-slate-400 text-xs font-black uppercase tracking-widest">${pokemon.id.split('-').pop()}</p>
                     <p class="text-slate-300 text-xs font-bold mt-1">HP: ${Number(pokemon.stats.hp).toLocaleString()} | PE: ${Number(Math.round(pokemon.pe)).toLocaleString()}</p>
                 </div>
-                <div class="size-20 bg-white/5 rounded-full flex items-center justify-center shrink-0 border border-white/10 overflow-hidden relative">
-                    <img class="w-16 h-16 object-contain z-10 pixelated scale-[1.2] mt-2" src="${imgUrlAnimated}" onerror="this.src='${imgUrlStatic}'; this.onerror=null;" alt="${pokemon.name}"/>
+                <div class="size-20 flex items-center justify-center shrink-0 overflow-hidden relative">
+                    <img class="w-20 h-20 object-contain z-10 pixelated" src="${imgUrlAnimated}" onerror="this.src='${imgUrlStatic}'; this.onerror=null;" alt="${pokemon.name}"/>
                 </div>
             </div>
 
@@ -749,17 +859,19 @@ function renderCounters(counters) {
         const urlName = getPokemonImageUrlName(c.pokemon.name);
         const imgUrlStatic = `https://play.pokemonshowdown.com/sprites/gen5/${urlName}.png`;
         const imgUrlAnimated = `https://play.pokemonshowdown.com/sprites/ani/${urlName}.gif`;
+        const gimmickBadge = getGimmickBadge(c.pokemon);
 
         return `
         <div class="flex items-center justify-between p-3 rounded-xl bg-surface-dark border border-white/10 glass-card">
             <div class="flex items-center gap-3">
-                <div class="size-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden relative">
-                    <img alt="${c.pokemon.name}" class="w-10 h-10 object-contain z-10 pixelated scale-[1.2]" src="${imgUrlAnimated}" onerror="this.src='${imgUrlStatic}'; this.onerror=null;"/>
+                <div class="size-12 flex items-center justify-center shrink-0 overflow-hidden relative">
+                    <img alt="${c.pokemon.name}" class="w-12 h-12 object-contain z-10 pixelated" src="${imgUrlAnimated}" onerror="this.src='${imgUrlStatic}'; this.onerror=null;"/>
                 </div>
                 <div class="flex flex-col">
                     <div class="flex items-center gap-2 mt-0.5">
                         <p class="font-black text-white text-base leading-none">${c.pokemon.name}</p>
                         <span class="text-primary text-[10px] font-black bg-primary/10 px-1 py-0.5 rounded leading-none shrink-0">${c.pokemon.star ? c.pokemon.star.replace(/[- ]star/i, '★') : ''}</span>
+                        ${gimmickBadge}
                     </div>
                     <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider mt-1">${c.pokemon.moves.normal} / ${c.pokemon.moves.gimmick || 'None'}</p>
                     <p class="text-[10px] font-bold text-primary mt-1 flex gap-2">
@@ -1159,7 +1271,8 @@ function showPokemonModal(name) {
     // Detect Gimmick Form
     let formBadge = '';
     let gimmickLabel = 'Gimmick Move';
-    if (pokemon.name.includes('Mega ')) {
+    const megaList = ['Venusaur', 'Charizard', 'Blastoise', 'Pidgeot', 'Gengar'];
+    if (megaList.includes(pokemon.name) || pokemon.name.includes('Mega ') || (pokemon.name === 'Lucario' && pokemon.star === '5-star')) {
         formBadge = `<div class="flex items-center gap-1 bg-gradient-to-r from-red-500/20 to-blue-500/20 border border-white/20 px-2 py-0.5 rounded text-[9px] font-black uppercase text-white shadow-sm"><span class="material-symbols-outlined text-[12px]">join_inner</span> Mega Evolution</div>`;
     } else if (pokemon.moves.gimmick && (pokemon.moves.gimmick.startsWith('Max ') || pokemon.moves.gimmick.startsWith('G-Max '))) {
         formBadge = `<div class="flex items-center gap-1 bg-gradient-to-r from-red-600/20 to-pink-600/20 border border-red-500/30 px-2 py-0.5 rounded text-[9px] font-black uppercase text-red-100 shadow-sm"><span class="material-symbols-outlined text-[12px]">cyclone</span> Dynamax</div>`;
@@ -1340,8 +1453,8 @@ function openAvatarPicker() {
             title="${t.name}">
             <div class="w-full aspect-square rounded-2xl overflow-hidden border-2 transition-all ${t.img === savedImg ? 'border-primary shadow-[0_0_12px_rgba(249,245,6,0.5)]' : 'border-white/10 hover:border-primary/50'} bg-background-dark flex items-center justify-center">
                 <img src="${t.img}" alt="${t.name}"
-                    class="w-full h-full object-cover object-top"
-                    style="transform: scale(1.1);"
+                    class="w-full h-full object-contain pixelated"
+                    style="transform: scale(2.2); transform-origin: center 15%;"
                     onerror="this.parentElement.innerHTML='<span class=\\'material-symbols-outlined text-slate-600 text-2xl\\'>person</span>'">
             </div>
             <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider group-hover:text-white transition-colors">${t.name}</span>
@@ -1357,15 +1470,44 @@ function selectTrainerAvatar(imgUrl, name) {
     // Update avatar circle
     const avatarImg = document.getElementById('profile-trainer-avatar-img');
     if (avatarImg) { avatarImg.src = imgUrl; avatarImg.style.display = 'block'; }
-    // Update cover art
-    const coverArt = document.getElementById('profile-cover-art');
-    if (coverArt) { coverArt.src = imgUrl; coverArt.style.opacity = '0.35'; }
     // Close picker
     document.getElementById('avatar-picker-modal').classList.add('hidden');
     showToast(`Trainer set to ${name}!`, 'success');
 }
 
+
 const QR_IMAGE_KEY = 'mezahub_qr_image_v1';
+const TRAINER_NAME_KEY = 'mezahub_trainer_name_v1';
+
+window.editTrainerName = function () {
+    const nameEl = document.getElementById('profile-trainer-name');
+    const currentName = localStorage.getItem(TRAINER_NAME_KEY) || (nameEl ? nameEl.innerText : 'Vincent');
+    const newName = prompt("Enter your new Trainer Name:", currentName);
+    if (newName && newName.trim() !== "") {
+        localStorage.setItem(TRAINER_NAME_KEY, newName.trim());
+        if (nameEl) nameEl.innerText = newName.trim();
+        showToast("Trainer Name Updated!", "success");
+    }
+}
+
+window.updateTrainerNameUI = function () {
+    const nameEl = document.getElementById('profile-trainer-name');
+    if (nameEl) {
+        const localName = localStorage.getItem(TRAINER_NAME_KEY);
+        if (localName) {
+            nameEl.innerText = localName;
+        } else if (typeof currentUser !== 'undefined' && currentUser && currentUser.displayName) {
+            nameEl.innerText = currentUser.displayName;
+        } else {
+            nameEl.innerText = "Vincent"; // Default Fallback
+        }
+    }
+}
+
+// Ensure the name is loaded when App initializes
+document.addEventListener('DOMContentLoaded', () => {
+    updateTrainerNameUI();
+});
 
 function handleImageUpload(event, type) {
     const file = event.target.files[0];
@@ -1645,4 +1787,346 @@ function showToast(message, type = 'success') {
         toast.style.opacity = '0';
         setTimeout(() => toast.remove(), 400);
     }, 2800);
+}
+
+// ==========================================
+// REGION THEME PICKER
+// ==========================================
+
+const REGION_THEME_KEY = 'mezahub_region_theme_v1';
+
+const REGION_THEMES = [
+    {
+        name: 'Kanto',
+        gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+        accent: '#e63946',
+        coverImg: 'assets/regions/kanto.png',
+        emoji: '🔴'
+    },
+    {
+        name: 'Johto',
+        gradient: 'linear-gradient(135deg, #1b4332 0%, #245238 50%, #1b4332 100%)',
+        accent: '#52b788',
+        coverImg: 'assets/regions/johto.png',
+        emoji: '🌿'
+    },
+    {
+        name: 'Hoenn',
+        gradient: 'linear-gradient(135deg, #023e8a 0%, #0077b6 50%, #00b4d8 100%)',
+        accent: '#00b4d8',
+        coverImg: 'assets/regions/hoenn.png',
+        emoji: '🌊'
+    },
+    {
+        name: 'Sinnoh',
+        gradient: 'linear-gradient(135deg, #2d3561 0%, #c05c7e 50%, #f3826f 100%)',
+        accent: '#c05c7e',
+        coverImg: 'assets/regions/sinnoh.png',
+        emoji: '❄️'
+    },
+    {
+        name: 'Unova',
+        gradient: 'linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 50%, #2a2a2a 100%)',
+        accent: '#adb5bd',
+        coverImg: 'assets/regions/unova.png',
+        emoji: '🌆'
+    },
+    {
+        name: 'Kalos',
+        gradient: 'linear-gradient(135deg, #e63946 0%, #457b9d 50%, #1d3557 100%)',
+        accent: '#e63946',
+        coverImg: 'assets/regions/kalos.png',
+        emoji: '🗼'
+    },
+    {
+        name: 'Alola',
+        gradient: 'linear-gradient(135deg, #f77f00 0%, #fcbf49 50%, #eae2b7 100%)',
+        accent: '#f77f00',
+        coverImg: 'assets/regions/alola.png',
+        emoji: '🌺'
+    },
+    {
+        name: 'Galar',
+        gradient: 'linear-gradient(135deg, #240046 0%, #5a189a 50%, #9d4edd 100%)',
+        accent: '#9d4edd',
+        coverImg: 'assets/regions/galar.png',
+        emoji: '⚔️'
+    },
+    {
+        name: 'Paldea',
+        gradient: 'linear-gradient(135deg, #7b2d8b 0%, #c0392b 50%, #e67e22 100%)',
+        accent: '#e67e22',
+        coverImg: 'assets/regions/paldea.png',
+        emoji: '🏟️'
+    },
+    {
+        name: 'Mezastar',
+        gradient: 'linear-gradient(135deg, #0d0d0f 0%, #1a1a1f 50%, #0d0d16 100%)',
+        accent: '#f9f506',
+        coverImg: 'assets/kanto.png',
+        emoji: '⭐'
+    },
+];
+
+function openRegionPicker() {
+    const modal = document.getElementById('region-picker-modal');
+    const grid = document.getElementById('region-theme-grid');
+    if (!modal || !grid) return;
+
+    const savedName = localStorage.getItem(REGION_THEME_KEY) || 'Mezastar';
+
+    grid.innerHTML = REGION_THEMES.map(region => {
+        const isActive = region.name === savedName;
+        return `
+        <div onclick="selectRegionTheme('${region.name}')"
+             class="relative rounded-2xl overflow-hidden cursor-pointer border-2 transition-all ${isActive ? 'border-primary shadow-[0_0_15px_rgba(249,245,6,0.4)]' : 'border-white/10 hover:border-white/30'}"
+             style="background: ${region.gradient}; min-height: 80px;">
+            <div class="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+                <span class="text-2xl mb-1">${region.emoji}</span>
+                <span class="text-white font-black text-xs uppercase tracking-widest leading-tight">${region.name}</span>
+                ${isActive ? '<span class="text-primary text-[8px] font-black uppercase tracking-widest mt-1">ACTIVE</span>' : ''}
+            </div>
+        </div>`;
+    }).join('');
+
+    modal.classList.remove('hidden');
+}
+
+function selectRegionTheme(regionName) {
+    const region = REGION_THEMES.find(r => r.name === regionName);
+    if (!region) return;
+
+    localStorage.setItem(REGION_THEME_KEY, regionName);
+
+    // Apply gradient to cover
+    const cover = document.getElementById('profile-cover');
+    if (cover) cover.style.background = region.gradient;
+
+    // Apply cover art image
+    const coverArt = document.getElementById('profile-cover-art');
+    if (coverArt) {
+        if (region.coverImg) {
+            coverArt.src = region.coverImg;
+            coverArt.style.opacity = '0.6';
+            coverArt.onerror = () => { coverArt.style.opacity = '0'; };
+        } else {
+            coverArt.src = '';
+            coverArt.style.opacity = '0';
+        }
+    }
+
+    // Close modal
+    document.getElementById('region-picker-modal').classList.add('hidden');
+}
+
+function loadRegionTheme() {
+    const savedName = localStorage.getItem(REGION_THEME_KEY);
+    if (savedName) selectRegionTheme(savedName);
+}
+
+document.addEventListener('DOMContentLoaded', loadRegionTheme);
+
+// ─── MARKETPLACE ───────────────────────────────────────────────────────────────
+let currentMarketPage = 1;
+const MARKET_PER_PAGE = 5;
+
+let currentMerchPage = 1;
+const MERCH_PER_PAGE = 6;
+
+const MERCH_DATA = [
+    { name: 'Pro Acrylic Slab', price: '₱750.00', img: 'assets/marketplace/slab.png', badge: 'BEST SELLER' },
+    { name: 'Battle Carry Case', price: '₱1,450.00', img: 'assets/marketplace/case.png' },
+    { name: 'Custom QR Tags', price: '₱300.00', img: 'assets/marketplace/custom_tags.jpg' },
+    { name: 'Pikachu Plushie', price: '₱1,200.00', img: 'assets/marketplace/pikachu_plushie.jpg' },
+    { name: 'Mezastar Small Case', price: '₱350.00', img: 'assets/marketplace/small_case.jpg' },
+    { name: 'Large Storage Box', price: '₱850.00', img: 'assets/marketplace/storage_box.jpg' },
+    { name: 'Pokéball Keychain', price: '₱200.00', img: 'assets/marketplace/keychains.jpg' },
+    { name: 'Tag Sleeves (Clear)', price: '₱150.00', img: 'assets/marketplace/protectors.jpg' }
+];
+
+function renderMarketplace() {
+    const grid = document.getElementById('marketplace-6star-grid');
+    if (!grid) return;
+
+    let sixStarTags = PokemonData.list.filter(p => p.star && String(p.star).toLowerCase().includes('6'));
+
+    if (sixStarTags.length === 0) {
+        grid.innerHTML = '<p class="text-slate-500 text-[10px] font-bold py-4 text-center">No 6★ tags available.</p>';
+        return;
+    }
+
+    const totalPages = Math.ceil(sixStarTags.length / MARKET_PER_PAGE) || 1;
+    if (currentMarketPage > totalPages) currentMarketPage = totalPages;
+    if (currentMarketPage < 1) currentMarketPage = 1;
+
+    const startIndex = (currentMarketPage - 1) * MARKET_PER_PAGE;
+    const displayList = sixStarTags.slice(startIndex, startIndex + MARKET_PER_PAGE);
+
+    const paginationContainer = document.getElementById('marketplace-pagination');
+    if (paginationContainer) {
+        if (sixStarTags.length > MARKET_PER_PAGE) {
+            paginationContainer.classList.remove('hidden');
+            document.getElementById('marketplace-page-indicator').innerText = `PAGE ${currentMarketPage} / ${totalPages}`;
+        } else {
+            paginationContainer.classList.add('hidden');
+        }
+    }
+
+    // Simple deterministic price generator per pokemon
+    const basePrice = 1500;
+    const badges = ['RARE', 'LEGEND', 'MINT', 'PREMIUM', 'HOT', 'EXCLUSIVE'];
+    const badgeColors = [
+        'bg-yellow-500/90',
+        'bg-red-500/90',
+        'bg-blue-500/90',
+        'bg-purple-500/90',
+        'bg-primary/90',
+        'bg-orange-500/90'
+    ];
+
+    let html = '';
+    displayList.forEach((pokemon, i) => {
+        const urlName = getPokemonImageUrlName(pokemon.name);
+        const imgUrlAni = `https://play.pokemonshowdown.com/sprites/ani/${urlName}.gif`;
+        const imgUrlStatic = `https://play.pokemonshowdown.com/sprites/gen5/${urlName}.png`;
+
+        // Pseudo-random but stable price
+        const charSum = pokemon.name.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
+        const price = basePrice + (charSum % 3000) + Math.round((pokemon.stats.atk || 100) * 8);
+        const formattedPrice = '₱' + price.toLocaleString('en-PH');
+
+        const badge = badges[charSum % badges.length];
+        const badgeColor = badgeColors[charSum % badgeColors.length];
+
+        const typesHtml = (pokemon.types || []).map(t => {
+            const c = TYPE_COLORS[t] || 'bg-slate-400 text-white';
+            return `<span class="px-1.5 py-0.5 rounded text-[7px] font-black uppercase ${c}">${t}</span>`;
+        }).join('');
+
+        html += `
+        <div class="glass-card bg-surface-dark border border-white/10 rounded-2xl p-3 flex gap-4 items-center group hover:border-primary/30 transition-all">
+            <div class="w-20 h-20 bg-black/40 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center">
+                <img src="${imgUrlAni}" onerror="this.src='${imgUrlStatic}'; this.onerror=null;"
+                    class="w-full h-full object-contain p-2 pixelated" alt="${pokemon.name}">
+                <div class="absolute bottom-0 inset-x-0 ${badgeColor} text-[7px] font-black text-black text-center py-0.5 uppercase tracking-widest">
+                    ${badge}
+                </div>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-start mb-1">
+                    <h4 class="text-white text-sm font-black uppercase truncate">${pokemon.name}</h4>
+                    <span class="text-primary font-black text-sm shrink-0 ml-1">${formattedPrice}</span>
+                </div>
+                <div class="flex items-center gap-1 flex-wrap mb-2">
+                    ${typesHtml}
+                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1">6★</span>
+                </div>
+                <div class="flex gap-2">
+                    <button class="flex-1 bg-white/5 border border-white/10 py-1.5 rounded-lg text-[9px] font-black text-white hover:bg-white/10 transition-all uppercase tracking-widest">
+                        Details
+                    </button>
+                    <button class="flex-1 bg-primary py-1.5 rounded-lg text-[9px] font-black text-black hover:bg-primary/80 transition-all uppercase tracking-widest shadow-lg shadow-primary/10">
+                        Add to Cart
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    });
+
+    grid.innerHTML = html;
+
+    // --- Merch Rendering ---
+    const merchGrid = document.getElementById('marketplace-merch-grid');
+    if (merchGrid) {
+        const totalMPages = Math.ceil(MERCH_DATA.length / MERCH_PER_PAGE) || 1;
+        if (currentMerchPage > totalMPages) currentMerchPage = totalMPages;
+        if (currentMerchPage < 1) currentMerchPage = 1;
+
+        const mStart = (currentMerchPage - 1) * MERCH_PER_PAGE;
+        const mDisplay = MERCH_DATA.slice(mStart, mStart + MERCH_PER_PAGE);
+
+        const mPagination = document.getElementById('merch-pagination');
+        if (mPagination) {
+            if (MERCH_DATA.length > MERCH_PER_PAGE) {
+                mPagination.classList.remove('hidden');
+                document.getElementById('merch-page-indicator').innerText = `PAGE ${currentMerchPage} / ${totalMPages}`;
+            } else {
+                mPagination.classList.add('hidden');
+            }
+        }
+
+        let mHtml = '';
+        mDisplay.forEach(item => {
+            const badgeHtml = item.badge ? `<span class="absolute top-2 right-2 bg-primary px-1.5 py-0.5 rounded text-[8px] font-black text-black z-10">${item.badge}</span>` : '';
+            mHtml += `
+            <div class="glass-card bg-surface-dark border border-white/10 rounded-2xl overflow-hidden group">
+                <div class="aspect-square relative overflow-hidden bg-black/40">
+                    ${badgeHtml}
+                    <img src="${item.img}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="${item.name}" onerror="this.style.display='none'">
+                </div>
+                <div class="p-3">
+                    <h4 class="text-white text-[11px] font-black uppercase truncate">${item.name}</h4>
+                    <div class="flex items-center justify-between mt-2">
+                        <span class="text-primary font-black text-xs">${item.price}</span>
+                        <button class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-primary hover:text-black transition-all">
+                            <span class="material-symbols-outlined text-sm">add_shopping_cart</span>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        });
+        merchGrid.innerHTML = mHtml;
+    }
+}
+
+function changeMerchPage(diff) {
+    currentMerchPage += diff;
+    renderMarketplace();
+    const merchSection = document.getElementById('market-section-merch');
+    if (merchSection) {
+        merchSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function changeMarketPage(diff) {
+    currentMarketPage += diff;
+    renderMarketplace();
+    // Scroll back to the top of the tags section smoothly
+    const tagsSection = document.getElementById('market-section-tags');
+    if (tagsSection) {
+        tagsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function switchMarketTab(tabName) {
+    // Buttons
+    const btnAll = document.getElementById('market-btn-all');
+    const btnMerch = document.getElementById('market-btn-merch');
+    const btnTags = document.getElementById('market-btn-tags');
+
+    // Sections
+    const secMerch = document.getElementById('market-section-merch');
+    const secTags = document.getElementById('market-section-tags');
+
+    // Reset buttons
+    [btnAll, btnMerch, btnTags].forEach(btn => {
+        if (!btn) return;
+        btn.className = 'market-filter-btn px-5 py-2 rounded-full bg-surface-dark border border-white/10 text-slate-400 text-[10px] font-black uppercase tracking-widest transition-all';
+    });
+
+    // Reset sections
+    if (secMerch) secMerch.classList.add('hidden');
+    if (secTags) secTags.classList.add('hidden');
+
+    if (tabName === 'all') {
+        if (btnAll) btnAll.className = 'market-filter-btn px-5 py-2 rounded-full bg-primary text-black text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(249,245,6,0.3)] transition-all';
+        if (secMerch) secMerch.classList.remove('hidden');
+        if (secTags) secTags.classList.remove('hidden');
+    } else if (tabName === 'merch') {
+        if (btnMerch) btnMerch.className = 'market-filter-btn px-5 py-2 rounded-full bg-primary text-black text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(249,245,6,0.3)] transition-all';
+        if (secMerch) secMerch.classList.remove('hidden');
+    } else if (tabName === 'tags') {
+        if (btnTags) btnTags.className = 'market-filter-btn px-5 py-2 rounded-full bg-primary text-black text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(249,245,6,0.3)] transition-all';
+        if (secTags) secTags.classList.remove('hidden');
+    }
 }
