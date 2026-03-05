@@ -92,7 +92,24 @@ Analyze opponent weaknesses, find top counters, and efficiently present your sup
 *   Python 3.10+ (For updating datasets via Excel)
 *   `pandas` and `openpyxl` Python libraries
 
-## Installation & Setup
+## Accessing the App
+
+There are two primary ways to access and install Pokémon MezaHub:
+
+**1. Web Application (Recommended)**
+You can access the live Progressive Web App directly from your mobile or desktop browser via Firebase Hosting:
+*   [Launch Pokémon MezaHub](https://pokemon-mezastar-hub.web.app/)
+*   **To Install:** Open the link in your browser (Safari for iOS, Chrome for Android/Desktop) and select **"Add to Home Screen"** or **"Install App"**. This will download the web app to your device for offline, full-screen usage.
+
+**2. Android APK Download**
+For Android users who prefer a native application package, you can download the pre-compiled APK directly from this repository:
+*   Navigate to the `release/` folder in this repository.
+*   Download **`Pokemon MezaHub.apk`**.
+*   Transfer the file to your Android device and open it to install (you may need to allow "Install from Unknown Sources" in your device settings).
+
+---
+
+## Installation & Setup (For Developers)
 
 Because the application is built using standard HTML, CSS, and Vanilla JavaScript leveraging the Tailwind CSS compiler via CDN, it does not require a complex build process, package managers, or bundlers.
 
