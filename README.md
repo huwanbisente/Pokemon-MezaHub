@@ -67,19 +67,13 @@ graph TD
 
 The application features a responsive, mobile-first dark-themed interface mirroring modern Pokédex designs.
 
-### National Dex & Entry Viewer
-Browse, search, and view detailed stats, variants, and weaknesses for various Pokémon entries.
-![National Dex / Pokedex View](assets/screenshots/pokedex_view.PNG)
+### Application Preview
 
-### Battle Assistant & QR Management
-Analyze opponent weaknesses, find top counters, and efficiently present your support QR codes for swift scanning.
-![Battle Assistant View](assets/screenshots/battle_view.PNG)
-![QR Support Scanner View](assets/screenshots/qrsup_view.PNG)
-
-### Trainer Profile & Marketplace
-Track your arcade progress and view shop listings in the integrated marketplace.
-![Trainer Profile View](assets/screenshots/profile_view.PNG)
-![Marketplace View](assets/screenshots/marketplace_view.PNG)
+<p align="center">
+  <img src="assets/screenshots/pokedex_view.PNG" width="30%" alt="Pokedex View">
+  <img src="assets/screenshots/battle_view.PNG" width="30%" alt="Battle View">
+  <img src="assets/screenshots/profile_view.PNG" width="30%" alt="Profile View">
+</p>
 
 ---
 
