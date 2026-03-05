@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.web.pokemon_mezastar_hub.twa",
+        "sha256_cert_fingerprints": ["D0:53:91:CF:08:8C:95:DF:49:B3:BA:09:9B:5B:CF:1E:14:93:C4:61:9D:4C:34:AB:82:08:10:39:ED:01:16:F9"]
+      }
+    }]
