@@ -25,6 +25,35 @@ The project uses a lightweight stack designed for rapid manual updates, utilizin
 
 The following diagram illustrates the complete system architecture and data flow:
 
+```mermaid
+graph TD
+    subgraph "Data Engine (Local Prep)"
+        Excel[("Updated_PokeTables.xlsx")]
+        Python["Python Script (export_data.py)"]
+        DataJS["data.js (Static JSON payload)"]
+        
+        Excel -->|Read & Parse| Python
+        Python -->|Generate| DataJS
+    end
+
+    subgraph "Frontend SPA (Browser / Device)"
+        index["index.html (Main View)"]
+        appJS["app.js (Core Logic)"]
+        tw["Tailwind CSS (CDN)"]
+        manifest["manifest.json & sw.js (PWA Sync)"]
+        
+        index --- appJS
+        index --- tw
+        appJS -.->|Reads| DataJS
+        index --- manifest
+    end
+
+    subgraph "Backend Services"
+        Firebase["Firebase Database (firebase-db.js)"]
+        Firebase -.->|Sync User Profile & History| appJS
+    end
+```
+
 **Key Components:**
 - **Frontend SPA**: Main single-page application served via `index.html` with Vanilla JavaScript (`app.js`).
 - **Data Engine**: Python scripts extract and format data from `Updated_PokeTables.xlsx` into the application's `data.js`.
