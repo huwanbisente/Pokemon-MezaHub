@@ -7,6 +7,17 @@
       "**/.vscode/**",
       "**/.venv/**",
       "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "**/.well-known/assetlinks.json",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      }
     ]
   }
 }
